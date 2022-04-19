@@ -1,0 +1,3 @@
+[submodule "inference/thirdparty/iree"]
+	path = inference/thirdparty/iree
+	url = https://github.com/google/iree.git
