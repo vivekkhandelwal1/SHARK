@@ -13,10 +13,10 @@ PYTHON_VERSION_X_Y=`${PYTHON} -c 'import sys; version=sys.version_info[:2]; prin
 echo "Python: $PYTHON"
 echo "Python version: $PYTHON_VERSION_X_Y"
 
-git clone --recursive https://github.com/crowsonkb/v-diffusion-pytorch.git
-
-pip install -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html --pre torch torchvision
 pip install ftfy tqdm regex
+pip install git+https://github.com/openai/CLIP.git
+pip uninstall -y torch torchvision
+pip install -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html --pre torch torchvision
 
 mkdir v-diffusion-pytorch/checkpoints
-wget https://the-eye.eu/public/AI/models/v-diffusion/cc12m_1_cfg.pth -P v-diffusion-pytorch/checkpoints/
+# wget https://the-eye.eu/public/AI/models/v-diffusion/cc12m_1_cfg.pth -P v-diffusion-pytorch/checkpoints/
