@@ -116,7 +116,7 @@ class SharkImporter:
     # Converts the frontend specific tensors into np array.
     def convert_to_numpy(self, array_tuple: tuple):
         if self.frontend in ["torch", "pytorch"]:
-            return [x.detach().numpy() for x in array_tuple]
+            return [x.cpu().detach().numpy() for x in array_tuple]
         if self.frontend in ["tf", "tensorflow"]:
             return [x.numpy() for x in array_tuple]
 
@@ -130,7 +130,10 @@ class SharkImporter:
         outputs_name = "golden_out.npz"
         func_file_name = "function_name"
         model_name_mlir = model_name + "_" + self.frontend + ".mlir"
-        np.savez(os.path.join(dir, inputs_name), *inputs)
+        inputs_cpu = ()
+        for inp in inputs:
+            inputs_cpu + (inp.cpu(),)
+        np.savez(os.path.join(dir, inputs_name), *inputs_cpu)
         np.savez(os.path.join(dir, outputs_name), *outputs)
         np.save(os.path.join(dir, func_file_name), np.array(func_name))
 
@@ -171,7 +174,7 @@ class SharkImporter:
             golden_out = self.module(*self.inputs)
             if torch.is_tensor(golden_out):
                 golden_out = tuple(
-                    golden_out.detach().numpy(),
+                    golden_out.cpu().detach().numpy(),
                 )
             else:
                 golden_out = self.convert_to_numpy(golden_out)
