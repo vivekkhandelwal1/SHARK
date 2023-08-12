@@ -147,6 +147,22 @@ class SecondVicuna(torch.nn.Module):
         i62,
         i63,
         i64,
+        i65,
+        i66,
+        i67,
+        i68,
+        i69,
+        i70,
+        i71,
+        i72,
+        i73,
+        i74,
+        i75,
+        i76,
+        i77,
+        i78,
+        i79,
+        i80,
     ):
         # input_ids = input_tuple[0]
         # input_tuple = torch.unbind(pkv, dim=0)
@@ -276,6 +292,38 @@ class SecondVicuna(torch.nn.Module):
             (
                 i63,
                 i64,
+            ),
+            (
+                i65,
+                i66,
+            ),
+            (
+                i67,
+                i68,
+            ),
+            (
+                i69,
+                i70,
+            ),
+            (
+                i71,
+                i72,
+            ),
+            (
+                i73,
+                i74,
+            ),
+            (
+                i75,
+                i76,
+            ),
+            (
+                i77,
+                i78,
+            ),
+            (
+                i79,
+                i80,
             ),
         )
         op = self.model(
