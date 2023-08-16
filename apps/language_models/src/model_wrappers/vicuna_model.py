@@ -37,8 +37,16 @@ class FirstVicuna(torch.nn.Module):
             )
             print("Weight quantization applied.")
 
-    def forward(self, input_ids):
-        op = self.model(input_ids=input_ids, use_cache=True)
+    def forward(self, input_ids, position_ids, attention_mask):
+        op = self.model(input_ids=input_ids, 
+        position_ids=position_ids, 
+        past_key_values=None, 
+        attention_mask=attention_mask, 
+        use_cache=True,
+        return_dict=True,
+        output_attentions=False,
+        output_hidden_states=False,
+        )
         return_vals = []
         return_vals.append(op.logits)
         temp_past_key_values = op.past_key_values
@@ -82,7 +90,7 @@ class SecondVicuna(torch.nn.Module):
 
     def forward(
         self,
-        i0,
+        input_ids, position_ids, attention_mask,
         i1,
         i2,
         i3,
@@ -150,7 +158,7 @@ class SecondVicuna(torch.nn.Module):
     ):
         # input_ids = input_tuple[0]
         # input_tuple = torch.unbind(pkv, dim=0)
-        token = i0
+        # token = i0
         past_key_values = (
             (i1, i2),
             (
@@ -279,7 +287,14 @@ class SecondVicuna(torch.nn.Module):
             ),
         )
         op = self.model(
-            input_ids=token, use_cache=True, past_key_values=past_key_values
+        input_ids=input_ids, 
+        position_ids=position_ids, 
+        past_key_values=past_key_values, 
+        attention_mask=attention_mask, 
+        use_cache=True,
+        return_dict=True,
+        output_attentions=False,
+        output_hidden_states=False,
         )
         return_vals = []
         return_vals.append(op.logits)
