@@ -125,6 +125,7 @@ def get_vulkan_target_triple(device_name):
 
     else:
         triple = None
+    triple = f"adreno-a740-{system_os}"
     return triple
 
 
@@ -170,8 +171,9 @@ def get_iree_vulkan_args(device_num=0, extra_args=[]):
         )
 
     if vulkan_triple_flag is not None:
-        vulkan_target_env = get_vulkan_target_env_flag(vulkan_triple_flag)
-        res_vulkan_flag.append(vulkan_target_env)
+        # vulkan_target_env = get_vulkan_target_env_flag(vulkan_triple_flag)
+        print(vulkan_triple_flag)
+        res_vulkan_flag.append(vulkan_triple_flag)
     return res_vulkan_flag
 
 

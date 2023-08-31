@@ -479,7 +479,11 @@ def flatten_training_input(inputs):
     for i in inputs:
         if isinstance(i, dict):
             for value in i.values():
-                flattened_input.append(value.detach())
+                if isinstance(value, tuple):
+                    for tuple_val in value:
+                        flattened_input.append(tuple_val)
+                else:
+                    flattened_input.append(value.detach())
         elif isinstance(i, tuple):
             for value in i:
                 flattened_input.append(value)

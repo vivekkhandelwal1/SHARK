@@ -33,6 +33,7 @@ class SharkTrainer:
         self,
         model,
         input: tuple,
+        opt_state_dict,
         dynamic: bool = False,
         device: str = None,
         jit_trace: bool = False,
@@ -41,6 +42,7 @@ class SharkTrainer:
         self.model = model
         # Change tuple to list.
         self.input = [x for x in input]
+        self.opt_state_dict = opt_state_dict
         self.dynamic = dynamic
         self.from_aot = from_aot
         self.jit_trace = jit_trace
@@ -74,6 +76,7 @@ class SharkTrainer:
             packed_inputs = (
                 dict(self.model.named_parameters()),
                 dict(self.model.named_buffers()),
+                self.opt_state_dict,
                 tuple(self.input),
             )
             mlir_module, func_name = import_with_fx(
@@ -103,7 +106,11 @@ class SharkTrainer:
     def get_torch_params(self):
         params = [i.detach() for i in self.model.parameters()]
         buffers = [i.detach() for i in self.model.buffers()]
-        return params + buffers
+        opt_states = []
+        for _, opt_state in self.opt_state_dict.items():
+            for i in opt_state:
+                opt_states.append(i.detach())
+        return params + buffers + opt_states
 
     # Function to train pytorch module.
     def _train_torch(self, num_iters):
@@ -115,7 +122,9 @@ class SharkTrainer:
             params = self.shark_runner.run(
                 "forward", params + self.input, self.frontend
             )
-
+            params = params[:-1]
+            loss = params[-1]
+            print("loss:", loss)
         return params
 
     # Function to train tensorflow module.
