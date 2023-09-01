@@ -352,6 +352,182 @@ def add_upcast(fx_g):
 
     fx_g.graph.lint()
 
+import torch
+
+def update_for_training(fx_g):
+    # Inputs and outputs of aten.var.mean should be upcasted to fp32.
+    for node in fx_g.graph.nodes:
+        if node.op == "call_function":
+            if node.target in [torch.ops.aten.var_mean]:
+                with fx_g.graph.inserting_before(node):
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.prims.convert_element_type,
+                        args=(node.args[0], torch.float64),
+                        kwargs={},
+                    )
+                    node.args = (new_node, node.args[1])
+
+            if node.name.startswith("getitem"):
+                with fx_g.graph.inserting_before(node):
+                    if node.args[0].target in [torch.ops.aten.var_mean]:
+                        new_node = fx_g.graph.call_function(
+                            torch.ops.aten._to_copy,
+                            args=(node,),
+                            kwargs={"dtype": torch.float32},
+                        )
+                        node.append(new_node)
+                        node.replace_all_uses_with(new_node)
+                        new_node.args = (node,)
+                        new_node.kwargs = {"dtype": torch.float32}
+
+            if node.target in [torch.ops.aten.div]:
+                with fx_g.graph.inserting_before(node):
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.prims.convert_element_type,
+                        args=(node.args[0], torch.float64),
+                        kwargs={},
+                    )
+                    node.args = (new_node, node.args[1])
+
+            if type(node.args[0]) == torch.fx.node.Node and node.args[0].target in [torch.ops.aten.div]:
+                with fx_g.graph.inserting_before(node):
+                    tmp = node.args[0]
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.aten._to_copy,
+                        args=(node.args[0],),
+                        kwargs={"dtype": torch.float32},
+                    )
+                    node.args[0].append(new_node)
+                    node.args[0].replace_all_uses_with(new_node)
+                    new_node.args = (tmp,)
+                    new_node.kwargs = {"dtype": torch.float32}
+
+            if node.target in [torch.ops.aten.rsqrt]:
+                with fx_g.graph.inserting_before(node):
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.prims.convert_element_type,
+                        args=(node.args[0], torch.float64),
+                        kwargs={},
+                    )
+                    node.args = (new_node,)
+
+            if len(node.args) >=2 and type(node.args[1]) == torch.fx.node.Node and node.args[1].target in [torch.ops.aten.rsqrt]:
+                with fx_g.graph.inserting_before(node):
+                    tmp = node.args[1]
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.aten._to_copy,
+                        args=(node.args[1],),
+                        kwargs={"dtype": torch.float32},
+                    )
+                    node.args[1].append(new_node)
+                    node.args[1].replace_all_uses_with(new_node)
+                    new_node.args = (tmp,)
+                    new_node.kwargs = {"dtype": torch.float32}
+
+            if node.target in [torch.ops.aten.gelu]:
+                with fx_g.graph.inserting_before(node):
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.prims.convert_element_type,
+                        args=(node.args[0], torch.float64),
+                        kwargs={},
+                    )
+                    node.args = (new_node,)
+
+            if len(node.args) >=2 and type(node.args[0]) == torch.fx.node.Node and node.args[0].target in [torch.ops.aten.gelu]:
+                with fx_g.graph.inserting_before(node):
+                    tmp = node.args[0]
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.aten._to_copy,
+                        args=(node.args[1],),
+                        kwargs={"dtype": torch.float32},
+                    )
+                    node.args[0].append(new_node)
+                    node.args[0].replace_all_uses_with(new_node)
+                    new_node.args = (tmp,)
+                    new_node.kwargs = {"dtype": torch.float32}
+
+            if node.target in [torch.ops.aten.gelu_backward]:
+                with fx_g.graph.inserting_before(node):
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.prims.convert_element_type,
+                        args=(node.args[0], torch.float64),
+                        kwargs={},
+                    )
+                    new_node_1 = fx_g.graph.call_function(
+                        torch.ops.prims.convert_element_type,
+                        args=(node.args[1], torch.float64),
+                        kwargs={},
+                    )
+                    node.args = (new_node, new_node_1)
+
+            if len(node.args) >=2 and type(node.args[0]) == torch.fx.node.Node and node.args[0].target in [torch.ops.aten.gelu_backward]:
+                with fx_g.graph.inserting_before(node):
+                    tmp = node.args[0]
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.aten._to_copy,
+                        args=(node.args[0],),
+                        kwargs={"dtype": torch.float32},
+                    )
+                    node.args[0].append(new_node)
+                    node.args[0].replace_all_uses_with(new_node)
+                    new_node.args = (tmp,)
+                    new_node.kwargs = {"dtype": torch.float32}
+
+            if node.target in [torch.ops.aten.nll_loss_forward]:
+                with fx_g.graph.inserting_before(node):
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.prims.convert_element_type,
+                        args=(node.args[0], torch.float64),
+                        kwargs={},
+                    )
+                    node.args = (new_node, node.args[1], node.args[2], node.args[3], node.args[4])
+
+            if node.name.startswith("getitem"):
+                with fx_g.graph.inserting_before(node):
+                    if node.args[0].target in [torch.ops.aten.nll_loss_forward]:
+                        new_node = fx_g.graph.call_function(
+                            torch.ops.aten._to_copy,
+                            args=(node,),
+                            kwargs={"dtype": torch.float32},
+                        )
+                        node.append(new_node)
+                        node.replace_all_uses_with(new_node)
+                        new_node.args = (node,)
+                        new_node.kwargs = {"dtype": torch.float32}
+
+            if node.target in [torch.ops.aten.nll_loss_backward]:
+                with fx_g.graph.inserting_before(node):
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.prims.convert_element_type,
+                        args=(node.args[0], torch.float64),
+                        kwargs={},
+                    )
+                    new_node_1 = fx_g.graph.call_function(
+                        torch.ops.prims.convert_element_type,
+                        args=(node.args[1], torch.float64),
+                        kwargs={},
+                    )
+                    new_node_2 = fx_g.graph.call_function(
+                        torch.ops.prims.convert_element_type,
+                        args=(node.args[6], torch.float64),
+                        kwargs={},
+                    )
+                    node.args = (new_node, new_node_1, node.args[2], node.args[3], node.args[4], node.args[5], new_node_2)
+
+            if type(node.args[0]) == torch.fx.node.Node and node.args[0].target in [torch.ops.aten.nll_loss_backward]:
+                with fx_g.graph.inserting_before(node):
+                    tmp = node.args[0]
+                    new_node = fx_g.graph.call_function(
+                        torch.ops.aten._to_copy,
+                        args=(node.args[0],),
+                        kwargs={"dtype": torch.float32},
+                    )
+                    node.args[0].append(new_node)
+                    node.args[0].replace_all_uses_with(new_node)
+                    new_node.args = (tmp,)
+                    new_node.kwargs = {"dtype": torch.float32}
+
+    fx_g.graph.lint()
 
 def transform_fx(fx_g, quantized=False):
     import torch
@@ -654,12 +830,15 @@ def import_with_fx(
         add_upcast(fx_g)
         fx_g.recompile()
 
+
     if mlir_type == "fx":
         return fx_g
 
     if training:
+        update_for_training(fx_g)
         change_fx_graph_return_to_tuple(fx_g)
         inputs = flatten_training_input(inputs)
+
 
     ts_graph = torch.jit.script(fx_g)
     if mlir_type == "torchscript":
