@@ -63,6 +63,9 @@ opt_state = optim.init(bert_params)
 opt_state_dict = dict(opt_state[0]._asdict())
 opt_state_dict = {key: tuple(tensor_list) for key, tensor_list in opt_state_dict.items()}
 
+# import pdb
+# pdb.set_trace()
+
 def forward(params, buffers, opt_state_dict, packed_inputs):
     params_and_buffers = {**params, **buffers}
     output = stateless.functional_call(
@@ -102,6 +105,8 @@ def forward(params, buffers, opt_state_dict, packed_inputs):
 
 bert_train_module = SharkTrainer(bert, packed_inputs, opt_state_dict)
 bert_train_module.compile(forward)
-params, losses = bert_train_module.train(2)
+print("[DEBUG] Compilation Done")
+params = bert_train_module.train(50)
+# print(params)
 
 print("done training")

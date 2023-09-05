@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from shark.parser import shark_args
 from shark.shark_runner import SharkRunner
 from shark.backward_makefx import MakeFxModule
@@ -20,6 +21,12 @@ import numpy as np
 from tqdm import tqdm
 import sys
 
+def create_directory_if_not_exists(directory_path):
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+        print(f"Directory '{directory_path}' created successfully.")
+    #else:
+        #print(f"Directory '{directory_path}' already exists.")
 
 # Prints to stderr.
 def print_err(*a):
@@ -80,7 +87,7 @@ class SharkTrainer:
                 tuple(self.input),
             )
             mlir_module, func_name = import_with_fx(
-                training_fn, packed_inputs, False, [], training=True
+                training_fn, packed_inputs, False, [], training=True,
             )
             self.shark_runner = SharkRunner(
                 mlir_module,
@@ -88,6 +95,11 @@ class SharkTrainer:
                 "tm_tensor",
                 extra_args=extra_args,
             )
+            # To run fx_graph
+            # fx_g = import_with_fx(
+            #     training_fn, packed_inputs, False, [], training=True, mlir_type="fx",
+            # )
+            # self.shark_runner = fx_g
         elif self.frontend in ["tensorflow", "tf", "mhlo", "stablehlo"]:
             self.shark_runner = SharkRunner(
                 self.model,
@@ -112,19 +124,41 @@ class SharkTrainer:
                 opt_states.append(i.detach())
         return params + buffers + opt_states
 
+
+
     # Function to train pytorch module.
     def _train_torch(self, num_iters):
         """Returns the updated weights after num_iters"""
         params = self.get_torch_params()
-        params = [x.numpy() for x in params]
+        # params = [x.numpy() for x in params]
         print(f"Training started for {num_iters} iterations:")
         for i in tqdm(range(num_iters)):
+            if i == 0:
+                for it in range(30):
+                    params[92 + it] += 1
+            directory_path = f'bert_training_inputs_bert_8K_0L_adamw{i}'
+            create_directory_if_not_exists(directory_path)
+            print("num inps: ", len(params))
+            for j in range(len(params)):
+                np.save(f'{directory_path}/input{j}.npy', params[j])
             params = self.shark_runner.run(
                 "forward", params + self.input, self.frontend
             )
-            params = params[:-1]
+            # params = self.shark_runner(
+            #     *params, *self.input
+            # )
             loss = params[-1]
             print("loss:", loss)
+            # print("opt_state_new: ", params[-30:])
+            # params_and_buffers = params2 + buffers2 + opt_state2 + loss2
+            print("num params: ", len(params))
+            # print("buffers2: ", len(buffers2))
+            # print("opt_state2: ", len(opt_state2))
+            directory_path = f'bert_training_outputs_bert_8K_0L_adamw{i}'
+            create_directory_if_not_exists(directory_path)
+            for j in range(len(params)):
+                np.save(f'{directory_path}/output{j}.npy', params[j])
+            params = params[:-1]
         return params
 
     # Function to train tensorflow module.
