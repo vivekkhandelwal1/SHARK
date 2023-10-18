@@ -251,10 +251,10 @@ class ShardedFalcon(SharkLLMBase):
                 f_.write(bytecode)
                 print("Saved falcon mlir at ", str(self.falcon_mlir_path))
                 f_.close()
-                del bytecode
+                # del bytecode
 
         shark_module = SharkInference(
-            mlir_module=self.falcon_mlir_path,
+            mlir_module=bytecode,
             device=self.device,
             mlir_dialect="linalg",
         )
