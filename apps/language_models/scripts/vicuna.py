@@ -55,7 +55,7 @@ from apps.language_models.utils import (
 )
 from shark.shark_downloader import download_public_file
 from shark.shark_importer import get_f16_inputs
-from shark.shark_importer import import_with_fx, save_mlir
+from shark.shark_importer import import_with_fx
 from shark.shark_inference import SharkInference
 
 
@@ -684,7 +684,9 @@ class ShardedVicuna(VicunaBase):
         mlir_path = Path(f"lmhead.mlir")
         vmfb_path = Path(f"lmhead.vmfb")
         if mlir_path.exists():
-            print(f"Found bytecode module at {mlir_path}.")
+            f_ = open(mlir_path, "rb")
+            bytecode = f_.read()
+            f_.close()
         else:
             hidden_states = torch_mlir.TensorPlaceholder.like(
                 hidden_states, dynamic_axes=[1]
@@ -709,10 +711,12 @@ class ShardedVicuna(VicunaBase):
                 filepath.absolute(),
                 single_file=True,
             )
-            mlir_path = filepath
+            f_ = open(f"lmhead.mlir", "rb")
+            bytecode = f_.read()
+            f_.close()
 
         shark_module = SharkInference(
-            mlir_path,
+            bytecode,
             device=device,
             mlir_dialect="tm_tensor",
             device_idx=device_idx,
@@ -732,7 +736,9 @@ class ShardedVicuna(VicunaBase):
         mlir_path = Path(f"norm.mlir")
         vmfb_path = Path(f"norm.vmfb")
         if mlir_path.exists():
-            print(f"Found bytecode module at {mlir_path}.")
+            f_ = open(mlir_path, "rb")
+            bytecode = f_.read()
+            f_.close()
         else:
             hidden_states = torch_mlir.TensorPlaceholder.like(
                 hidden_states, dynamic_axes=[1]
@@ -751,10 +757,12 @@ class ShardedVicuna(VicunaBase):
                 filepath.absolute(),
                 single_file=True,
             )
-            mlir_path = filepath
+            f_ = open(f"norm.mlir", "rb")
+            bytecode = f_.read()
+            f_.close()
 
         shark_module = SharkInference(
-            mlir_path,
+            bytecode,
             device=device,
             mlir_dialect="tm_tensor",
             device_idx=device_idx,
@@ -774,7 +782,9 @@ class ShardedVicuna(VicunaBase):
         mlir_path = Path(f"embedding.mlir")
         vmfb_path = Path(f"embedding.vmfb")
         if mlir_path.exists():
-            print(f"Found bytecode module at {mlir_path}.")
+            f_ = open(mlir_path, "rb")
+            bytecode = f_.read()
+            f_.close()
         else:
             input_ids = torch_mlir.TensorPlaceholder.like(
                 input_ids, dynamic_axes=[1]
@@ -798,10 +808,12 @@ class ShardedVicuna(VicunaBase):
                 filepath.absolute(),
                 single_file=True,
             )
-            mlir_path = filepath
+            f_ = open(f"embedding.mlir", "rb")
+            bytecode = f_.read()
+            f_.close()
 
         shark_module = SharkInference(
-            mlir_path,
+            bytecode,
             device=device,
             mlir_dialect="tm_tensor",
             device_idx=device_idx,
@@ -1476,7 +1488,8 @@ class UnshardedVicuna(VicunaBase):
                 )
             if self.vicuna_mlir_path.exists():
                 print(f"[DEBUG] mlir found at {self.vicuna_mlir_path.absolute()}")
-                combined_module = self.vicuna_mlir_path.absolute()
+                with open(self.vicuna_mlir_path, "rb") as f:
+                    combined_module = f.read()
                 mlir_generated = True
                 break
 
@@ -1736,12 +1749,6 @@ class UnshardedVicuna(VicunaBase):
                 first_module,
                 second_module,
                 self.vicuna_mlir_path,
-            )
-            combined_module = save_mlir(
-                combined_module,
-                model_name="combined_llama",
-                mlir_dialect="tm_tensor",
-                dir=self.vicuna_mlir_path,
             )
             del first_module, second_module
 

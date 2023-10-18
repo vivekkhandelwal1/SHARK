@@ -710,11 +710,8 @@ class SharkifyStableDiffusionModel:
                 return self.text_encoder(input)[0]
 
         clip_model = CLIPText(low_cpu_mem_usage=self.low_cpu_mem_usage)
-        save_dir = ""
+        save_dir = os.path.join(self.sharktank_dir, self.model_name["clip"])
         if self.debug:
-            save_dir = os.path.join(
-                self.sharktank_dir, self.model_name["clip"]
-            )
             os.makedirs(
                 save_dir,
                 exist_ok=True,

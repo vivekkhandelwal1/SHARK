@@ -1,7 +1,7 @@
 import os
 import tempfile
 from shark.shark_inference import SharkInference
-from shark.shark_importer import import_with_fx, save_mlir
+from shark.shark_importer import import_with_fx
 import torch
 import torch_mlir
 from torch_mlir.compiler_utils import run_pipeline_with_repro_report
@@ -130,17 +130,10 @@ def compile_int_precision(
     mlir_module = mlir_module.encode("UTF-8")
     mlir_module = BytesIO(mlir_module)
     bytecode = mlir_module.read()
-    bytecode_path = os.path.join(
-        os.getcwd(), f"{extended_model_name}_linalg.mlirbc"
-    )
-    with open(bytecode_path, "wb") as f:
-        f.write(bytecode)
-    del bytecode
-    del mlir_module
     print(f"Elided IR written for {extended_model_name}")
-    return bytecode_path
+    return bytecode
     shark_module = SharkInference(
-        mlir_module=bytecode_path, device=device, mlir_dialect="tm_tensor"
+        mlir_module=bytecode, device=device, mlir_dialect="tm_tensor"
     )
     extra_args = [
         "--iree-hal-dump-executable-sources-to=ies",
@@ -155,7 +148,7 @@ def compile_int_precision(
             generate_vmfb=generate_vmfb,
             extra_args=extra_args,
         ),
-        bytecode_path,
+        bytecode,
     )
 
 
@@ -208,7 +201,7 @@ def shark_compile_through_fx(
         ]
     else:
         (
-            bytecode,
+            mlir_module,
             _,
         ) = import_with_fx(
             model=model,
@@ -218,11 +211,6 @@ def shark_compile_through_fx(
             debug=debug,
             model_name=extended_model_name,
             save_dir=save_dir,
-        )
-        mlir_module = save_mlir(
-            mlir_module=bytecode,
-            model_name=extended_model_name,
-            mlir_dialect=mlir_dialect,
         )
 
     shark_module = SharkInference(
